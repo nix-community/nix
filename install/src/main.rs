@@ -1,14 +1,8 @@
 // We have a script that generates a bunch of executable steps.
 use std::path::Path;
-use std::collections::HashSet;
-use nix::unistd::{Uid, User};
 
-
-trait Step: std::fmt::Debug {
-    fn apply(&self) -> Result<(), ()>;
-    fn dry_apply(&self) -> Result<(), ()>;
-    fn delete(&self) -> Result<(), ()>;
-}
+mod traits;
+mod users;
 
 #[derive(Debug)]
 struct LocalFile<'a> {
@@ -17,7 +11,7 @@ struct LocalFile<'a> {
     contents: String,
 }
 
-impl<'a> Step for LocalFile<'a> {
+impl<'a> traits::Step for LocalFile<'a> {
     fn apply(&self) -> Result<(), ()> {
          Ok(())
     }
@@ -30,73 +24,9 @@ impl<'a> Step for LocalFile<'a> {
     }
 }
 
-#[derive(Debug)]
-struct Users {
-    n_users: u32,
-    gid: u32,
-    name: String,
-}
 
-impl Users {
-    fn _delta(&self, n_users: u32) -> Result<(HashSet<(Uid, String)>, HashSet<(Uid, String)>), ()> {
-        let mut current = HashSet::new();
-        let mut target = HashSet::new();
-        let base = 30_000;
 
-        for i in 1..n_users {
-            target.insert((Uid::from_raw(base + i), format!("nixbld{}", i)));
-        }
-
-        // Ugly but assuming we own up to 2000 user accounts starting
-        // at UID 30_000.
-        for i in base..base + 2_000 {
-            let res = User::from_uid(Uid::from_raw(i));
-            if let Ok(Some(user)) = res {
-                if user.name.starts_with("nixbld") {
-                    current.insert((user.uid, user.name));
-                }
-            }
-        }
-
-        let remove = current.difference(&target).cloned().collect();
-        let add = target.difference(&current).cloned().collect();
-
-        Ok((remove, add))
-   }
-}
-
-impl Step for Users {
-   fn apply(&self) -> Result<(), ()> {
-        let (remove, add) = self._delta(self.n_users)?;
-        for x in remove {
-            println!("remove {:?}", x);
-        }
-        for x in add {
-            println!("add {:?}", x);
-        }
-        Ok(())
-    }
-    fn dry_apply(&self) -> Result<(), ()> {
-        let (remove, add) = self._delta(self.n_users)?;
-        for x in remove {
-            println!("remove {:?}", x);
-        }
-        for x in add {
-            println!("add {:?}", x);
-        }
-        Ok(())
-    }
-    fn delete(&self) -> Result<(), ()> {
-        // 0 users == remove all
-        let (remove, add) = self._delta(0)?;
-        for x in remove {
-            println!("remove {:?}", x);
-        }
-        Ok(())
-    }
-}
-
-fn make_plan(crud: Vec<&dyn Step>) {
+fn make_plan(crud: Vec<&dyn traits::Step>) {
     for x in crud {
         println!("{:?}", x);
         x.apply();
@@ -109,12 +39,12 @@ fn main() {
         permissions: "-rwxr--r--".to_string(),
         contents: include_str!("default-nix-conf").to_string(),
     };
-    let lf_uid = Users {
+    let lf_uid = users::Users {
         n_users: 16,
         gid: 30000,
         name: "nixbld".to_string(),
     };
-    let desired: Vec<&dyn Step> = vec![
+    let desired: Vec<&dyn traits::Step> = vec![
         &lf,
         &lf_uid,
     ];
