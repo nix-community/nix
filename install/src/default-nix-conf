@@ -1,0 +1,3 @@
+build-users-group = nixbld
+max-jobs = 4
+cores = 0
