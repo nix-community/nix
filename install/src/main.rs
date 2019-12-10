@@ -1,11 +1,10 @@
 // We have a script that generates a bunch of executable steps.
 use std::path::Path;
 
-trait CRUD {
-    fn read(self) -> Result<(), ()>;
-    fn update(self) -> Result<(), ()>;
-    fn delete(self) -> Result<(), ()>;
-    fn create(self) -> Result<(), ()>;
+trait Step: std::fmt::Debug {
+    fn apply(&self) -> Result<(), ()>;
+    fn dry_apply(&self) -> Result<(), ()>;
+    fn delete(&self) -> Result<(), ()>;
 }
 
 #[derive(Debug)]
@@ -15,47 +14,41 @@ struct LocalFile<'a> {
     contents: String,
 }
 
-// recorded  local should exist   what do?
-//        y      n            n   no-op
-//        y      n            y   create
-//        y      y            n   delete
-//        y      y            y   no-op (unless different, in that case replace)
-//        n      n            n   no-op
-//        n      n            y   create
-//        n      y            n   delete
-//        n      y            y   no-op (unless different, in that case replace)
-
-
-impl<'a> CRUD for LocalFile<'a> {
-    fn read(self) -> Result<(), ()>{ Ok(())
+impl<'a> Step for LocalFile<'a> {
+    fn apply(&self) -> Result<(), ()> {
+         Ok(())
     }
-    fn update(self) -> Result<(), ()> { Ok(()) } // no-op
-    fn create(self) -> Result<(), ()> {
+    fn dry_apply(&self) -> Result<(), ()> {
+        Ok(())
+    }
+    fn delete(&self) -> Result<(), ()> {
         self.path.is_file();
         Ok(())
     }
-    fn delete(self) -> Result<(), ()> {
-        self.delete();
-        Ok(())
-    }
 }
-
 
 struct NixConf {
     system_features: String,
     timeout: u32,
 }
 
+fn make_plan(crud: Vec<&dyn Step>) {
+    for x in crud {
+        x.apply();
+        println!("{:?}", x);
+    }
+}
 
 fn main() {
-    let desired = vec![
-        &(LocalFile {
-            path: &Path::new("/etc/nix/nix.conf"),
-            permissions: "-rwxr--r--".to_string(),
-            contents: include_str!("default-nix-conf").to_string(),
-        })
+    let lf = LocalFile {
+        path: &Path::new("/etc/nix/nix.conf"),
+        permissions: "-rwxr--r--".to_string(),
+        contents: include_str!("default-nix-conf").to_string(),
+    };
+    let desired: Vec<&dyn Step> = vec![
+        &lf
     ];
-    // let plan = make_plan(desired, recorded);
+    let plan = make_plan(desired);
     // print(plan);
     // execute(plan);
 }
