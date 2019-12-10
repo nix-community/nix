@@ -28,15 +28,10 @@ host and then run the installer on the guest.
 
 # Shutdown
 
-Go to another terminal and run `pkill qemu`. This is not ideal..
+Press `ctrl+a c` to open the qemu console and then type `quit`.
 
 # Reset the VM
 
 Delete the `disk.qcow2` file and re-start the VM.
-
-# TODO:
-
-* Figure out how to shutdown the VM nicely.
-
 
 [1]: https://bugs.launchpad.net/cloud-images/+bug/1726476
