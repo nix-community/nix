@@ -7,7 +7,7 @@
 # * during boot, press enter to continue
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")"
 
 # This is already in qcow2 format.
 img=ubuntu-18.04-server-cloudimg-amd64.img
@@ -45,5 +45,5 @@ qemu-system-x86_64 \
   -serial mon:stdio \
   -smp 2 \
   -vga virtio \
-  -virtfs local,security_model=passthrough,id=fsdev0,path=$PWD,readonly,mount_tag=hostshare \
+  -virtfs local,security_model=passthrough,id=fsdev0,path=$PWD/..,readonly,mount_tag=hostshare \
 ;
