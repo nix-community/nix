@@ -38,12 +38,12 @@ struct Users {
 }
 
 impl Users {
-    fn _delta(&self) -> Result<(HashSet<(Uid, String)>, HashSet<(Uid, String)>), ()> {
+    fn _delta(&self, n_users: u32) -> Result<(HashSet<(Uid, String)>, HashSet<(Uid, String)>), ()> {
         let mut current = HashSet::new();
         let mut target = HashSet::new();
         let base = 30_000;
 
-        for i in 1..self.n_users {
+        for i in 1..n_users {
             target.insert((Uid::from_raw(base + i), format!("nixbld{}", i)));
         }
 
@@ -67,7 +67,7 @@ impl Users {
 
 impl Step for Users {
    fn apply(&self) -> Result<(), ()> {
-        let (remove, add) = self._delta()?;
+        let (remove, add) = self._delta(self.n_users)?;
         for x in remove {
             println!("remove {:?}", x);
         }
@@ -77,9 +77,21 @@ impl Step for Users {
         Ok(())
     }
     fn dry_apply(&self) -> Result<(), ()> {
+        let (remove, add) = self._delta(self.n_users)?;
+        for x in remove {
+            println!("remove {:?}", x);
+        }
+        for x in add {
+            println!("add {:?}", x);
+        }
         Ok(())
     }
     fn delete(&self) -> Result<(), ()> {
+        // 0 users == remove all
+        let (remove, add) = self._delta(0)?;
+        for x in remove {
+            println!("remove {:?}", x);
+        }
         Ok(())
     }
 }
