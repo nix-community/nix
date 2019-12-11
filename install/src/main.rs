@@ -51,7 +51,7 @@ fn main() {
         contents: include_str!("default-nix-conf").to_string(),
     };
     let lf_uid = users::Users {
-        n_users: 16,
+        n_users: 3,
         gid: 30000,
         name: "nixbld".to_string(),
     };

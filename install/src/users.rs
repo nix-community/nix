@@ -16,14 +16,14 @@ impl Users {
         let mut target = HashSet::new();
         let base = 30_000;
 
-        for i in 1..n_users {
+        for i in 1..=n_users {
             target.insert((Uid::from_raw(base + i), format!("nixbld{}", i)));
         }
 
         // Ugly but assuming we own up to 2000 user accounts starting
         // at UID 30_000.
-        for i in base..base + 2_000 {
-            let res = User::from_uid(Uid::from_raw(i));
+        for i in 1..2000 {
+            let res = User::from_uid(Uid::from_raw(base + i));
             if let Ok(Some(user)) = res {
                 if user.name.starts_with("nixbld") {
                     current.insert((user.uid, user.name));
@@ -42,10 +42,16 @@ impl traits::Step for Users {
    fn apply(&self) -> Result<(), ()> {
         let (remove, add) = self._delta(self.n_users)?;
         for x in remove {
-            println!("remove {:?}", x);
         }
-        for x in add {
-            println!("add {:?}", x);
+        for (id, username) in add {
+            let result = std::process::Command::new("useradd")
+                .arg(username)
+                .arg("--uid").arg(format!("{}", id.as_raw()))
+                .output().expect("user add failed");
+            println!("{}, {}",
+                std::str::from_utf8(&result.stdout).expect(""),
+                std::str::from_utf8(&result.stderr).expect(""));
+            assert!(result.status.success());
         }
         Ok(())
     }
