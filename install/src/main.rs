@@ -1,4 +1,5 @@
 // We have a script that generates a bunch of executable steps.
+use clap::{App, Arg, SubCommand};
 use std::path::Path;
 
 mod traits;
@@ -13,7 +14,7 @@ struct LocalFile<'a> {
 
 impl<'a> traits::Step for LocalFile<'a> {
     fn apply(&self) -> Result<(), ()> {
-         Ok(())
+        Ok(())
     }
     fn dry_apply(&self) -> Result<(), ()> {
         Ok(())
@@ -24,13 +25,22 @@ impl<'a> traits::Step for LocalFile<'a> {
     }
 }
 
-fn make_plan(crud: Vec<&dyn traits::Step>) {
-    for x in crud {
-        println!("{:?}", x);
+// TODO(tom): structurally it might make sense to have
+// a nesting "Step" then the top level just becomes
+// top_level.apply()
+fn apply(steps: Vec<&dyn traits::Step>) {
+    for x in steps {
+        println!("apply {:?}", x);
         x.apply();
     }
 }
 
+fn delete(steps: Vec<&dyn traits::Step>) {
+    for x in steps {
+        println!("delete {:?}", x);
+        x.delete();
+    }
+}
 
 fn _check_correct_system() {
     // TODO(tom) - use whitelist instead of blacklist for installer
@@ -41,24 +51,54 @@ fn _check_correct_system() {
     }
 }
 
-
 fn main() {
     _check_correct_system();
+
+    let matches = App::new("Nix installer")
+        .version("0.1")
+        .about("Manage your local nix install")
+        .subcommand(
+            SubCommand::with_name("install")
+                .about("Install or fix system")
+                .arg(
+                    Arg::with_name("num_build_users")
+                        .long("num-build-users")
+                        .help("How many build users to set up")
+                        .takes_value(true),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("uninstall").about("Completely removes nix from your system"),
+        )
+        .get_matches();
 
     let lf = LocalFile {
         path: &Path::new("/etc/nix/nix.conf"),
         permissions: "-rwxr--r--".to_string(),
         contents: include_str!("default-nix-conf").to_string(),
     };
-    let lf_uid = users::Users {
-        n_users: 3,
-        gid: 30000,
-        name: "nixbld".to_string(),
-    };
-    let desired: Vec<&dyn traits::Step> = vec![
-        &lf,
-        &lf_uid,
-    ];
-    let plan = make_plan(desired);
-    let gid = 30000;
+
+    if let Some(matches) = matches.subcommand_matches("install") {
+        let lf_uid = users::Users {
+            n_users: matches
+                .value_of("num_build_users")
+                .unwrap_or("16")
+                .parse()
+                .unwrap(),
+            gid: 30000,
+            name: "nixbld".to_string(),
+        };
+        let desired: Vec<&dyn traits::Step> = vec![&lf, &lf_uid];
+        apply(desired);
+    }
+
+    if let Some(matches) = matches.subcommand_matches("uninstall") {
+        let lf_uid = users::Users {
+            n_users: 0,
+            gid: 30000,
+            name: "nixbld".to_string(),
+        };
+        let desired: Vec<&dyn traits::Step> = vec![&lf, &lf_uid];
+        delete(desired);
+    }
 }

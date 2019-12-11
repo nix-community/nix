@@ -35,22 +35,36 @@ impl Users {
         let add = target.difference(&current).cloned().collect();
 
         Ok((remove, add))
-   }
+    }
 }
 
 impl traits::Step for Users {
-   fn apply(&self) -> Result<(), ()> {
+    fn apply(&self) -> Result<(), ()> {
         let (remove, add) = self._delta(self.n_users)?;
-        for x in remove {
+        for (id, username) in remove {
+            let result = std::process::Command::new("userdel")
+                .arg(username)
+                .output()
+                .expect("user del failed");
+            println!(
+                "{}, {}",
+                std::str::from_utf8(&result.stdout).expect(""),
+                std::str::from_utf8(&result.stderr).expect("")
+            );
+            assert!(result.status.success());
         }
         for (id, username) in add {
             let result = std::process::Command::new("useradd")
                 .arg(username)
-                .arg("--uid").arg(format!("{}", id.as_raw()))
-                .output().expect("user add failed");
-            println!("{}, {}",
+                .arg("--uid")
+                .arg(format!("{}", id.as_raw()))
+                .output()
+                .expect("user add failed");
+            println!(
+                "{}, {}",
                 std::str::from_utf8(&result.stdout).expect(""),
-                std::str::from_utf8(&result.stderr).expect(""));
+                std::str::from_utf8(&result.stderr).expect("")
+            );
             assert!(result.status.success());
         }
         Ok(())
@@ -67,10 +81,7 @@ impl traits::Step for Users {
     }
     fn delete(&self) -> Result<(), ()> {
         // 0 users == remove all
-        let (remove, add) = self._delta(0)?;
-        for x in remove {
-            println!("remove {:?}", x);
-        }
-        Ok(())
+        assert!(self.n_users == 0);
+        self.apply()
     }
 }
