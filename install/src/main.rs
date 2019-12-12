@@ -80,12 +80,28 @@ fn main() {
         )
         .get_matches();
 
+    // TODO(tom): design question - removal will remove all of the following but
+    // if we don't do it recursively then we need to enumerate all subdirs..
+    let lf = directory::Directory::root_owned("/nix/");
+    let lf = directory::Directory::root_owned("/nix/var/log/nix/drvs");
+    let lf = directory::Directory::root_owned("/nix/var/nix/db");
+    let lf = directory::Directory::root_owned("/nix/var/nix/gcroots/per-user");
+    let lf = directory::Directory::root_owned("/nix/var/nix/profiles");
+    let lf = directory::Directory::root_owned("/nix/var/nix/temproots");
+    let lf = directory::Directory::root_owned("/nix/var/nix/userpool/per-user");
     let lf = directory::Directory {
-        path: &Path::new("/etc/nix/nix.conf"),
-        mode: 33060,
-        owner: 0, // root
-        group: 0, // root
+        path: &Path::new("/nix/store"),
+        mode: 0x43fd,
+        owner: 0,
+        group: 30000,
     };
+    let lf = directory::Directory {
+        path: &Path::new("/etc/nix"),
+        mode: 0x41ed,
+        owner: 0,
+        group: 0,
+    };
+
 
     if let Some(matches) = matches.subcommand_matches("install") {
         let lf_uid = users::Users {

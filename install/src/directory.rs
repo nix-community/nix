@@ -13,6 +13,17 @@ pub struct Directory<'a> {
     pub group: u32,
 }
 
+impl<'a> Directory<'a> {
+    pub fn root_owned(p: &'a str) -> Self {
+        Directory {
+            path: &Path::new(p),
+            mode: 0x41ed,
+            owner: 0, // root
+            group: 0,
+        }
+    }
+}
+
 impl<'a> traits::Step for Directory<'a> {
     fn apply(&self) -> Result<(), ()> {
         if self.path.is_file() {
