@@ -21,6 +21,14 @@ Next comes the login session. Use these credentials:
 username: ubuntu
 password: ubuntu
 
+# SSH access
+
+From the installer-test folder, run:
+
+```sh
+ssh -i ./id_rsa ubuntu@localhost -p 10022
+```
+
 # Run the installer
 
 The nix folder is mounted read-only under /mnt. Build the installer on the

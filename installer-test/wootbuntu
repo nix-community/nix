@@ -17,6 +17,11 @@ if [[ ! -f "$img_orig" ]]; then
 fi
 chmod -w "$img_orig"
 
+# Generate a ssh key-pair
+if [[ ! -f "id_rsa.pub" ]]; then
+  ssh-keygen -q -t rsa -f id_rsa -N ""
+fi
+
 # Setup the VM configuration on boot
 user_data=user-data.img
 rm -f "$user_data"
@@ -26,6 +31,8 @@ rm -f "$user_data"
 # https://askubuntu.com/questions/507345/how-to-set-a-password-for-ubuntu-cloud-images-ie-not-use-ssh/1094189#1094189
 cat >user-data <<EOF
 #cloud-config
+ssh_authorized_keys:
+  - "$(< id_rsa.pub)"
 password: ubuntu
 chpasswd:
   list:
@@ -59,7 +66,7 @@ args=(
   -device rtl8139,netdev=net0
   -enable-kvm
   -m 2G
-  -netdev user,id=net0
+  -netdev user,id=net0,hostfwd=tcp:127.0.0.1:10022-:22
   -serial mon:stdio
   -smp 2
   #-vga virtio
