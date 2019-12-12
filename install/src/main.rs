@@ -4,11 +4,12 @@ use std::path::Path;
 
 mod traits;
 mod users;
+mod directory;
 
 #[derive(Debug)]
 struct LocalFile<'a> {
-    path: &'a Path,
     permissions: String,
+    path: &'a Path,
     contents: String,
 }
 
@@ -51,8 +52,15 @@ fn _check_correct_system() {
     }
 }
 
+fn _check_root() {
+    if !nix::unistd::Uid::effective().is_root() {
+        panic!("need to be root");
+    };
+}
+
 fn main() {
     _check_correct_system();
+    _check_root();
 
     let matches = App::new("Nix installer")
         .version("0.1")
@@ -72,10 +80,11 @@ fn main() {
         )
         .get_matches();
 
-    let lf = LocalFile {
+    let lf = directory::Directory {
         path: &Path::new("/etc/nix/nix.conf"),
-        permissions: "-rwxr--r--".to_string(),
-        contents: include_str!("default-nix-conf").to_string(),
+        mode: 33060,
+        owner: 0, // root
+        group: 0, // root
     };
 
     if let Some(matches) = matches.subcommand_matches("install") {
@@ -88,7 +97,7 @@ fn main() {
             gid: 30000,
             name: "nixbld".to_string(),
         };
-        let desired: Vec<&dyn traits::Step> = vec![&lf, &lf_uid];
+        let desired: Vec<&dyn traits::Step> = vec![&lf];
         apply(desired);
     }
 
@@ -98,7 +107,7 @@ fn main() {
             gid: 30000,
             name: "nixbld".to_string(),
         };
-        let desired: Vec<&dyn traits::Step> = vec![&lf, &lf_uid];
+        let desired: Vec<&dyn traits::Step> = vec![&lf];
         delete(desired);
     }
 }
