@@ -1,59 +1,25 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -I nixpkgs=channel:nixos-19.09
-#!nix-shell -p curl qemu cloud-utils
 #!nix-shell -i bash
-#
-# Known issues:
-# * during boot, press enter to continue
 set -euo pipefail
 
 cd "$(dirname "$0")"
-
-# Download the original image from ubuntu.com
-img_orig=ubuntu-18.04-server-cloudimg-amd64.img
-if [[ ! -f "$img_orig" ]]; then
-  curl -o "$img_orig.tmp" -fL "https://cloud-images.ubuntu.com/releases/18.04/release/${img_orig}"
-  mv "$img_orig.tmp" "$img_orig"
-fi
-chmod -w "$img_orig"
 
 # Generate a ssh key-pair
 if [[ ! -f "id_rsa.pub" ]]; then
   ssh-keygen -q -t rsa -f id_rsa -N ""
 fi
 
+# Prepare the disk image
+out=$(nix-build -A prepare)
+
 # Setup the VM configuration on boot
-user_data=user-data.img
-rm -f "$user_data"
-# For the password.
-# https://stackoverflow.com/questions/29137679/login-credentials-of-ubuntu-cloud-server-image/53373376#53373376
-# https://serverfault.com/questions/920117/how-do-i-set-a-password-on-an-ubuntu-cloud-image/940686#940686
-# https://askubuntu.com/questions/507345/how-to-set-a-password-for-ubuntu-cloud-images-ie-not-use-ssh/1094189#1094189
-cat >user-data <<EOF
-#cloud-config
-ssh_authorized_keys:
-  - "$(< id_rsa.pub)"
-password: ubuntu
-chpasswd:
-  list:
-    - root:root
-    - ubuntu:ubuntu
-  expire: False
-ssh_pwauth: True
-mounts:
- - [ hostshare, /mnt, 9p, "defaults,trans=virtio,version=9p2000.L" ]
-EOF
-cloud-localds "$user_data" user-data
-
-# Make a sparse copy of the disk image for our experiments
 img=disk.qcow2
-rm -f "$img"
+user_data=userdata.qcow2
+rm -f "$img" "$user_data"
 
-# And now make a sparse image
-qemu-img create -f qcow2 -b "$img_orig" "$img"
-# sparse resize: does not use any extra space, just allows the resize to happen later on.
-# https://superuser.com/questions/1022019/how-to-increase-size-of-an-ubuntu-cloud-image
-qemu-img resize "$img" +64G
+cp --reflink=auto "$out/disk.qcow2" disk.qcow2
+cp --reflink=auto "$out/userdata.qcow2" userdata.qcow2
+chmod +w disk.qcow2 userdata.qcow2
 
 # And finally boot qemu with a bunch of arguments
 
@@ -62,17 +28,19 @@ path=$(cd .. && pwd -P)
 args=(
   -nographic
   -drive "file=${img},format=qcow2"
-  -drive "file=${user_data},format=raw"
+  -drive "file=${user_data},format=qcow2"
   -device rtl8139,netdev=net0
   -enable-kvm
   -m 2G
   -netdev user,id=net0,hostfwd=tcp:127.0.0.1:10022-:22
   -serial mon:stdio
   -smp 2
+  -loadvm prepare
   #-vga virtio
   # Share the nix folder with the guest
   -virtfs local,security_model=passthrough,id=fsdev0,path=$path,readonly,mount_tag=hostshare
 )
 
+echo "started, press enter in a few seconds"
 set +x
 exec qemu-system-x86_64 "${args[@]}"

@@ -2,5 +2,4 @@
 /id_rsa
 /id_rsa.pub
 /ubuntu-18.04-server-cloudimg-amd64.img
-/user-data
-/user-data.img
+/userdata.qcow2

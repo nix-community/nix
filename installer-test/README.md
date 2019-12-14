@@ -7,13 +7,6 @@ Run ./wootbuntu to start the VM. It will automatically download the ISO and
 setup QEMU. Make sure to have KVM enabled on your machine for it to be fast
 (/dev/kvm should exist on the host).
 
-You should see the following error[1]:
-
-    error: no such device: root.
-
-Wait 30 seconds and it should continue to boot. Sometimes you need to type
-Enter to continue.
-
 # Login
 
 Next comes the login session. Use these credentials:
