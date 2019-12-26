@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ssh -i ./id_rsa ubuntu@127.0.0.1 -p 10022 "$@"

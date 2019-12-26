@@ -3,9 +3,6 @@ let
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    cloud-utils
-    curl
-    expect
     qemu
   ];
 }

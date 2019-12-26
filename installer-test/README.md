@@ -19,7 +19,13 @@ password: ubuntu
 From the installer-test folder, run:
 
 ```sh
-ssh -i ./id_rsa ubuntu@localhost -p 10022
+./ssh
+```
+
+# FIXME: mount /mnt
+
+```sh
+mount -t 9p hostshare /mnt -o trans=virtio,version=9p2000.L
 ```
 
 # Run the installer
@@ -30,9 +36,5 @@ host and then run the installer on the guest.
 # Shutdown
 
 Press `ctrl+a c` to open the qemu console and then type `quit`.
-
-# Reset the VM
-
-Delete the `disk.qcow2` file and re-start the VM.
 
 [1]: https://bugs.launchpad.net/cloud-images/+bug/1726476

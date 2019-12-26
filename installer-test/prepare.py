@@ -45,24 +45,31 @@ qemu = pexpect.spawn(
 qemu.expect(u"error: no such device: root.")
 qemu.sendline("")
 
-log("AAA")
+log("waiting on boot to finish")
 
 qemu.expect(u"cloud-init.*finished at ")
+
+log("logging in")
+
+qemu.sendline("ubuntu")
+qemu.expect(u"Password:")
+qemu.sendline("ubuntu")
+qemu.expect(u"ubuntu@ubuntu")
+
+log("entering qemu menu")
+
 qemu.sendcontrol("a")
 qemu.send("c")
 
-log("BBB")
+log("creating snapshot")
 
 qemu.expect(u"\(qemu\)")
 qemu.sendline("savevm prepare")
 
-log("CCC")
+log("exiting")
 
 qemu.expect(u"\(qemu\)")
 qemu.sendline("quit")
-
-log("DDD")
-
 qemu.wait()
 
 log("FINISHED")

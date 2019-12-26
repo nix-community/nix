@@ -14,11 +14,10 @@ out=$(nix-build -A prepare)
 
 # Setup the VM configuration on boot
 img=disk.qcow2
-user_data=userdata.qcow2
-rm -f "$img" "$user_data"
+userdata=userdata.qcow2
 
-cp --reflink=auto "$out/disk.qcow2" disk.qcow2
-cp --reflink=auto "$out/userdata.qcow2" userdata.qcow2
+cp --reflink=auto "$out/disk.qcow2" "$img"
+cp --reflink=auto "$out/userdata.qcow2" "$userdata"
 chmod +w disk.qcow2 userdata.qcow2
 
 # And finally boot qemu with a bunch of arguments
@@ -28,7 +27,7 @@ path=$(cd .. && pwd -P)
 args=(
   -nographic
   -drive "file=${img},format=qcow2"
-  -drive "file=${user_data},format=qcow2"
+  -drive "file=${userdata},format=qcow2"
   -device rtl8139,netdev=net0
   -enable-kvm
   -m 2G
@@ -41,6 +40,6 @@ args=(
   -virtfs local,security_model=passthrough,id=fsdev0,path=$path,readonly,mount_tag=hostshare
 )
 
-echo "started, press enter in a few seconds"
+echo "Started. Press enter in a few seconds."
 set +x
 exec qemu-system-x86_64 "${args[@]}"
