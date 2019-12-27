@@ -49,14 +49,23 @@ rec {
     ''
       export LANG=C.UTF-8
       export LC_ALL=C.UTF-8
-      cp ${./prepare.py} prepare.py
-      python ./prepare.py "${image}" "${userdata}"
+
+      # copy the images to work on them
+      cp --reflink=auto ${image} disk.qcow2
+      cp --reflink=auto ${userdata} userdata.qcow2
+      chmod +w disk.qcow2 userdata.qcow2
+
+      # Make some room on the root image
+      qemu-img resize disk.qcow2 +64G
+
+      # Run the automated installer
+      python ${./prepare.py} disk.qcow2 userdata.qcow2
 
       # At this point the disk should have a named snapshot
-      qemu-img snapshot -l disk.qcow2
+      qemu-img snapshot -l disk.qcow2 | grep prepare
 
       mkdir $out
-      cp disk.qcow2 userdata.qcow2 $out/
+      mv disk.qcow2 userdata.qcow2 $out/
     '';
 
   # TODO: actually inject the installer, boot the VM and run some test

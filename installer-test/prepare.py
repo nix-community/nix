@@ -13,21 +13,13 @@ userdata = sys.argv[2]
 
 log("image={} userdata={}".format(image, userdata))
 
-# copy the images to work on them
-subprocess.check_call(["cp", "--reflink=auto", image, "disk.qcow2"])
-subprocess.check_call(["cp", "--reflink=auto", userdata, "userdata.qcow2"])
-subprocess.check_call(["chmod", "+w", "disk.qcow2", "userdata.qcow2"])
-
-# Make some room on the root image
-subprocess.check_call(["qemu-img", "resize", "disk.qcow2", "+64G"])
-
 log("booting VM")
 
 qemu = pexpect.spawn(
         "qemu-system-x86_64",
         [
-            "-drive", "file=disk.qcow2,format=qcow2",
-            "-drive", "file=userdata.qcow2,format=qcow2",
+            "-drive", "file={},format=qcow2".format(image),
+            "-drive", "file={},format=qcow2".format(userdata),
             "-enable-kvm",
             "-m", "2G",
             "-nographic",

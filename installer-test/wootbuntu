@@ -40,6 +40,9 @@ args=(
   -virtfs local,security_model=passthrough,id=fsdev0,path=$path,readonly,mount_tag=hostshare
 )
 
-echo "Started. Press enter in a few seconds."
+echo "Starting VM."
+echo "To login: ubuntu / ubuntu"
+echo "To quit: type 'Ctrl+a c' then 'quit'"
+echo "Press enter in a few seconds"
 set +x
 exec qemu-system-x86_64 "${args[@]}"
