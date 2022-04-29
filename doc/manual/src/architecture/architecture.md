@@ -7,21 +7,17 @@ It should help users understand why Nix behaves as it does, and it should help d
 
 Nix consists of hierarchical [layers](https://en.m.wikipedia.org/wiki/Multitier_architecture#Layers).
 
-```
-               [ commmand line interface ]
-                            |
-                            | evaluates
-                            V
-               [ configuration language  ]
-                            |
-                            | evaluates to
-                            |
-              reference     V       build
-[ build inputs ] --> [ build plans ] --> [ build results ]
-          \                 |                 /
-            \               | persisted to  /
-              \             V             /
-              [           store           ]
+```mermaid
+flowchart
+  subgraph store
+    direction LR
+    input[build input] --> |referenced by| drv[build plan] --> |builds| out[build output]
+    dep[run time dependency] --> |referenced by| out
+  end
+  cli[command line interface] --> |evaluates| expr[configuration language expression] --> |evaluates to| drv
+  cli --> |manages|store
+  store --> |represented in| fs[file system]
+  expr --> |persisted on| fs
 ```
 
 At the top is the *command line interface*, translating from invocations of Nix executables to interactions with the underlying layers.
