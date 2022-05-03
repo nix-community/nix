@@ -8,10 +8,18 @@ A store object is the pair of
 
 We call a store object's outermost file system object the *root*.
 
+```mermaid
+classDiagram
+  class StoreObject{
+    ~FileSystemObject~ root
+    Set~Reference~ references
+  }
+```
+
 ```haskell
 data StoreOject = StoreObject {
   root       :: FileSystemObject
-, references :: Set StoreObject
+, references :: Set Reference
 }
 ```
 
@@ -23,6 +31,25 @@ Every file system object is one of the following:
  - File: an executable flag, and arbitrary data for contents
  - Directory: mapping of names to child file system objects
  - [Symbolic link](https://en.m.wikipedia.org/wiki/Symbolic_link): may point anywhere.
+
+```mermaid
+classDiagram
+  class FileSystemObject{
+  }
+  FileSystemObject <|-- File
+  FileSystemObject <|-- Directory
+  FileSystemObject <|-- SymLink
+  class File {
+    ~Bool~ isExecutable
+    ~Bytes~ contents
+  }
+  class Directory {
+    Map~FileName, FileSystemObject~ entries
+  }
+  class SymLink {
+    ~Path~ target
+  }
+```
 
 ```haskell
 data FileSystemObject
@@ -38,6 +65,18 @@ Symlinks pointing outside of their own root, or to a store object without a matc
 ## Reference {#reference}
 
 A store object can reference other store objects.
+
+```mermaid
+classDiagram
+  class Reference{
+    ~Hash~ hash
+    ~Name~ name
+  }
+```
+
+```haskell
+data Reference = Reference Hash Name
+```
 
 Nix stores have the *closure property*: for each store object in the store, all the store objects it references must also be in the store.
 

@@ -1,12 +1,40 @@
 # Store
 
+```mermaid
+flowchart
+  subgraph store
+    direction LR
+    builder[build input] --> |build instructions| drv
+    input2[build input] --> |build time dependency| drv
+    input[build input] --> drv[build step] --> output[build result]
+    input -->|run time dependency| output
+  end
+```
+
 A Nix store is a collection of [store objects](objects.md) with associated operations.
 
-These store objects can hold arbitrary data, and Nix makes no distinction if they are used as build inputs, build results, or build plans.
+These store objects can hold arbitrary data, and Nix makes no distinction if they are used as build inputs, build results, or build steps.
 
 A Nix store allows adding, retrieving, and deleting store objects.
-It can perform builds, that is, transform build inputs using instructions from the build plans into build outputs.
+It can perform builds, that is, transform build inputs using instructions from the build steps into build outputs.
 It also keeps track of *references* between data and can therefore garbage-collect unused store objects.
+
+```mermaid
+classDiagram
+    class Store{
+        Set~StoreObject~ objects
+        +build(~Reference~ buildStep) ~Reference~
+        +add(~FileSystemObject~ source) ~Reference~
+        +get(~Reference~ object) ~StoreObject~
+        +delete(~Reference~ object)
+    }
+    Store <|-- LocalStore
+    Store <|-- RemoteStoreSSH
+    Store <|-- RemoteStoreHTTP
+    class LocalStore{
+        storeDirectory
+    }
+```
 
 There exist different types of stores, which all follow this model.
 Examples:
