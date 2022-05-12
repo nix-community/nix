@@ -75,7 +75,7 @@ Per the *no dangling* rule already discussed, one can only refer directly like t
 **Built reference**
 These are a pair of a derivation reference and an output name.
 They indirectly refer to the store output with the given name that will be produced by the given derivation.
-Since the store output is not directly referenced, the *no dangling** rule is impacted by this.
+Since the store output is not directly referenced, the *no dangling* rule is impacted by this.
 Thus, store objects that are not yet built can be referred to this way.
 
 ## Planning -- Execution separation
