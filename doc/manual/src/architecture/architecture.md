@@ -24,9 +24,9 @@ Nix consists of hierarchical [layers](https://en.m.wikipedia.org/wiki/Multitier_
 +-----------------------------------------------------------------+
 ```
 
-At the top is the *command line interface*, translating from invocations of Nix executables to interactions with the underlying layers.
+At the top is the [command line interface](../command-ref/command-ref.md), translating from invocations of Nix executables to interactions with the underlying layers.
 
-Below that is the *Nix language*, a [purely functional](https://en.m.wikipedia.org/wiki/Purely_functional_programming) configuration language.
+Below that is the [Nix expression language](../expressions/expression-language.md), a [purely functional](https://en.m.wikipedia.org/wiki/Purely_functional_programming) configuration language.
 It is used to compose expressions which ultimately evaluate to self-contained *build plans*, made up *build tasks* used to derive *build results* from referenced *build inputs*.
 
 ::: {.note}
@@ -37,6 +37,6 @@ In practice this amounts to a set of files in a file system.
 
 The command line and Nix language are what users interact with most.
 
-Underlying everything is the *Nix store*, a mechanism to keep track of build tasks, data, and references between them.
+Underlying these is the [Nix store](./store/store.md), a mechanism to keep track of build tasks, data, and references between them.
 It can also execute *build instructions*, captured in the build tasks, to produce new data.
 
