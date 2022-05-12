@@ -20,7 +20,7 @@ By induction then, store objects with references must be "built up** from store 
 
 Other operations impacted by these invariant are:
 
-**Copying***
+**Copying**
 Store objects can be copied between stores.
 Store objects being copied must refer to objects already in the destination store.
 Recursive copying must either proceed in dependency order or be atomic.
