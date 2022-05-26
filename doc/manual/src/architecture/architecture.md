@@ -43,6 +43,17 @@ In practice this amounts to a set of files in a file system.
 Underlying these is the [Nix store](./store/store.md), a mechanism to keep track of build plans, data, and references between them.
 It can also execute build plans to produce new data.
 
+Nix has commands to hook build results into the operating system, by symlinking files to certain locations and setting environment variables.
+This allows the data Nix manages to take on meaning as software packages or system configuration files.
+
+::: {.note}
+The store makes Nix a build system.
+
+The language makes Nix a configuration management system.
+
+The commands make Nix a package manager and software deployment framework.
+:::
+
 
 [layer-architecture]: https://en.m.wikipedia.org/wiki/Multitier_architecture#Layers
 [purely-functional-programming]: https://en.m.wikipedia.org/wiki/Purely_functional_programming
