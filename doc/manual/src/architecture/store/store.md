@@ -1,12 +1,148 @@
 # Store
 
-A Nix store is a collection of [store objects](objects.md) with associated operations.
+A Nix store is a collection of *store objects*.
 
-These store objects can hold arbitrary data, and Nix makes no distinction if they are used as build inputs, build results, or build tasks.
+## Store Object
 
-A Nix store allows adding, retrieving, and deleting store objects.
-It can perform builds, that is, transform build inputs using instructions from the build tasks into build outputs.
-It also keeps track of *references* between data and can therefore garbage-collect unused store objects.
+A store object can hold
+
+- arbitrary *data*
+- *references* to other store objects.
+
+Nix makes no distinction if store objects are build inputs, build results, or build tasks.
+
+Store objects are [immutable][immutable-object]: once created, they do not change until they are deleted.
+
+## Reference
+
+A store object reference is an [opaque][opaque-data-type], [unique identifier][unique-identifier]:
+The only way to obtain references is by adding or building store objects.
+A reference will always point to exactly one store object.
+
+## Operations
+
+A Nix store can *add*, *retrieve*, and *delete* store objects.
+
+                [ data ]
+                    |
+                    V
+    [ store ] ---> add ----> [ store' ]
+                    |
+                    V
+              [ reference ]
+
+<!-- -->
+
+              [ reference ]
+                    |
+                    V
+    [ store ] ---> get
+                    |
+                    V
+             [ store object ]
+
+<!-- -->
+
+              [ reference ]
+                    |
+                    V
+    [ store ] --> delete --> [ store' ]
+
+
+It can *perform builds*, that is, create new store objects by transforming build inputs into build outputs, using instructions from the build tasks.
+
+
+              [ reference ]
+                    |
+                    V
+    [ store ] --> build
+                       \
+                      (maybe) --> [ store' ]
+                         |
+                         V
+                   [ reference ]
+
+
+As it keeps track of references, it can [garbage-collect][garbage-collection] unused store objects.
+
+
+    [ store ] --> collect garbage --> [ store' ]
+
+
+## Closure
+
+Nix stores have the *closure property*: for each store object in the store, all the store objects it references must also be in the store.
+
+Adding, building, copying and deleting store objects must be done in a way that obeys this property:
+
+- A newly added store object cannot have references, unless it is a build task.
+
+- Build results must only refer to store objects in the closure of the build inputs.
+
+  Building a store object will add appropriate references, according to the build task.
+  These references can only come from declared build inputs.
+
+- Store objects being copied must refer to objects already in the destination store.
+
+  Recursive copying must either proceed in dependency order or be atomic.
+
+- We can only safely delete store objects which are not reachable from any reference still in use.
+
+  Garbage collection will delete those store objects that cannot be reached from any reference in use.
+
+  <!-- more details in section on garbage collection, link to it once it exists -->
+
+[garbage-collection]: https://en.m.wikipedia.org/wiki/Garbage_collection_(computer_science)
+[immutable-object]: https://en.m.wikipedia.org/wiki/Immutable_object
+[opaque-data-type]: https://en.m.wikipedia.org/wiki/Opaque_data_type
+[unique-identifier]: https://en.m.wikipedia.org/wiki/Unique_identifier
+
+## Files and Processes
+
+Nix maps between its store model and the [Unix paradigm][unix-paradigm] of [files and processes][file-descriptor], by encoding immutable store objects and opaque identifiers as file system primitives: files and directories, and paths.
+That allows processes to resolve references contained in files and thus access the contents of store objects.
+
+Store objects are therefore implemented as the pair of
+
+  - a *file system object* for data
+  - a set of *store paths* for references.
+
+[unix-paradigm]: https://en.m.wikipedia.org/wiki/Everything_is_a_file
+[file-descriptor]: https://en.m.wikipedia.org/wiki/File_descriptor
+
+```
++-----------------------------------------------------------------+
+| Nix                                                             |
+|                  [ commmand line interface ]------,             |
+|                               |                   |             |
+|                           evaluates               |             |
+|                               |                manages          |
+|                               V                   |             |
+|                  [ configuration language  ]      |             |
+|                               |                   |             |
+| +-----------------------------|-------------------V-----------+ |
+| | store                  evaluates to                         | |
+| |                             |                               | |
+| |             referenced by   V       builds                  | |
+| |  [ build input ] ---> [ build plan ] ---> [ build result ]  | |
+| |         ^                                        |          | |
+| +---------|----------------------------------------|----------+ |
++-----------|----------------------------------------|------------+
+            |                                        |
+    file system object                          store path
+            |                                        |
++-----------|----------------------------------------|------------+
+| operating system        +------------+             |            |
+|           '------------ |            | <-----------'            |
+|                         |    file    |                          |
+|                     ,-- |            | <-,                      |
+|                     |   +------------+   |                      |
+|          execute as |                    | read, write, execute |
+|                     |   +------------+   |                      |
+|                     '-> |  process   | --'                      |
+|                         +------------+                          |
++-----------------------------------------------------------------+
+```
 
 There exist different types of stores, which all follow this model.
 Examples:
@@ -14,8 +150,7 @@ Examples:
 - remote store accessible via SSH
 - binary cache store accessible via HTTP
 
-Every store with a file system representation has a *store directory*, which contains that store’s objects accessible through [store paths](paths.md).
-The store directory defaults to `/nix/store`, but is in principle arbitrary.
+To make store objects accessible to processes, stores ultimately have to expose store objects through the file system.
 
 ## A [Rosetta stone][rosetta-stone] for build system terminology
 
