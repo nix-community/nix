@@ -1,12 +1,59 @@
 # Store
 
-A Nix store is a collection of [store objects](objects.md) which refer to one another.
+A Nix store is a collection of *store objects* which refer to one another.
 
 These store objects can hold arbitrary data, and Nix makes no distinction if they are used as build inputs, build results, or build tasks.
 
-A Nix store allows adding, retrieving, and deleting store objects.
-It can perform builds, that is, transform build inputs using instructions from the build tasks into build outputs.
-It also keeps track of *references* between data and can therefore garbage-collect unused store objects.
+## Operations
+
+A Nix store can *add*, *retrieve*, and *delete* store objects.
+
+                [ data ]
+                    |
+                    V
+    [ store ] ---> add ----> [ store' ]
+                    |
+                    V
+              [ reference ]
+
+<!-- -->
+
+              [ reference ]
+                    |
+                    V
+    [ store ] ---> get
+                    |
+                    V
+             [ store object ]
+
+<!-- -->
+
+              [ reference ]
+                    |
+                    V
+    [ store ] --> delete --> [ store' ]
+
+
+It can *perform builds*, that is, create new store objects by transforming build inputs into build outputs, using instructions from the build tasks.
+
+
+              [ reference ]
+                    |
+                    V
+    [ store ] --> build
+                       \
+                      (maybe) --> [ store' ]
+                         |
+                         V
+                   [ reference ]
+
+
+As it keeps track of references, it can [garbage-collect][garbage-collection] unused store objects.
+
+
+    [ store ] --> collect garbage --> [ store' ]
+
+[garbage-collection]: https://en.m.wikipedia.org/wiki/Garbage_collection_(computer_science)
 
 ## Two models, abstract and concrete
 
